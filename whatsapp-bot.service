@@ -1,0 +1,16 @@
+[Unit]
+Description=WhatsApp Bot Service
+After=network.target
+
+[Service]
+Type=forking
+User=root
+WorkingDirectory=/c/xampp/htdocs/bot-whats
+Environment=PATH=/usr/bin:/usr/local/bin
+Environment=NODE_ENV=production
+ExecStart=/usr/local/bin/pm2 start ecosystem.config.js
+ExecReload=/usr/local/bin/pm2 reload ecosystem.config.js
+ExecStop=/usr/local/bin/pm2 stop ecosystem.config.js
+
+[Install]
+WantedBy=multi-user.target 
