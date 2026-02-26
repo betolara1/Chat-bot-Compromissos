@@ -4,6 +4,7 @@ import qrcode from "qrcode-terminal"
 import mysql from "mysql2/promise"
 import cron from "node-cron"
 import dotenv from "dotenv"
+import { processarHorario, normalizarTexto, processarData } from "./utils.js"
 
 dotenv.config()
 
@@ -365,63 +366,8 @@ async function marcarLembreteEnviado(id) {
   }
 }
 
-// Função para processar horário
-function processarHorario(horarioTexto) {
-  console.log(`⏰ Processando horário: "${horarioTexto}"`)
+// Funções utilitárias movidas para utils.js
 
-  // Remove espaços e converte para minúsculo
-  const texto = horarioTexto.trim().toLowerCase()
-
-  // Formatos aceitos: 15h30, 15:30, 1530, 15h, 15
-  const regexes = [
-    /^(\d{1,2})h(\d{2})$/, // 15h30
-    /^(\d{1,2}):(\d{2})$/, // 15:30
-    /^(\d{4})$/, // 1530
-    /^(\d{1,2})h$/, // 15h
-    /^(\d{1,2})$/, // 15
-  ]
-
-  for (const regex of regexes) {
-    const match = texto.match(regex)
-    if (match) {
-      let hora, minuto
-
-      if (match[0].length === 4 && !match[0].includes("h") && !match[0].includes(":")) {
-        // Formato 1530
-        hora = Number.parseInt(match[1].substring(0, 2))
-        minuto = Number.parseInt(match[1].substring(2))
-      } else if (match[2]) {
-        // Formatos com minutos (15h30, 15:30)
-        hora = Number.parseInt(match[1])
-        minuto = Number.parseInt(match[2])
-      } else {
-        // Formatos só com hora (15h, 15)
-        hora = Number.parseInt(match[1])
-        minuto = 0
-      }
-
-      console.log(`🕐 Hora extraída: ${hora}, Minuto: ${minuto}`)
-
-      if (hora >= 0 && hora <= 23 && minuto >= 0 && minuto <= 59) {
-        const horarioFormatado = `${hora.toString().padStart(2, "0")}:${minuto.toString().padStart(2, "0")}`
-        console.log(`✅ Horário formatado: ${horarioFormatado}`)
-        return horarioFormatado
-      }
-    }
-  }
-
-  console.log(`❌ Horário inválido: ${horarioTexto}`)
-  return null
-}
-
-// Função para normalizar texto
-function normalizarTexto(texto) {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-}
 
 // Função para enviar menu de opções
 async function enviarMenuOpcoes(telefone, nome) {
@@ -716,11 +662,11 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       case "aguardando_assunto":
         console.log(`\n📝 === PROCESSANDO ASSUNTO ===`)
         console.log(`📥 Assunto recebido: "${mensagem}"`)
-        
+
         estado.data.assunto = mensagem
         estado.step = "aguardando_data"
         conversationStates.set(numeroLimpo, estado)
-        
+
         console.log(`✅ Estado atualizado:`, estado)
         console.log(`📤 Enviando solicitação de data...`)
 
@@ -734,7 +680,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       case "aguardando_data":
         console.log(`\n📅 === PROCESSANDO DATA ===`)
         console.log(`📥 Data recebida: "${mensagem}"`)
-        
+
         const dataFormatada = processarData(mensagem)
         console.log(`🔍 Data após processamento: ${dataFormatada}`)
 
@@ -750,7 +696,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
         estado.data.data = dataFormatada
         estado.step = "aguardando_horario"
         conversationStates.set(numeroLimpo, estado)
-        
+
         console.log(`✅ Data válida: ${dataFormatada}`)
         console.log(`✅ Estado atualizado:`, estado)
         console.log(`📤 Enviando solicitação de horário...`)
@@ -765,7 +711,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       case "aguardando_horario":
         console.log(`\n⏰ === PROCESSANDO HORÁRIO ===`)
         console.log(`📥 Horário recebido: "${mensagem}"`)
-        
+
         const horaFormatada = processarHorario(mensagem)
         console.log(`🔍 Horário após processamento: ${horaFormatada}`)
 
@@ -781,7 +727,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
         estado.data.hora = horaFormatada
         estado.step = "aguardando_recorrencia"
         conversationStates.set(numeroLimpo, estado)
-        
+
         console.log(`✅ Horário válido: ${horaFormatada}`)
         console.log(`✅ Estado atualizado:`, estado)
         console.log(`📤 Enviando solicitação de frequência...`)
@@ -796,7 +742,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       case "aguardando_recorrencia":
         console.log(`\n🔄 === PROCESSANDO RECORRÊNCIA ===`)
         console.log(`📥 Opção recebida: "${mensagem}"`)
-        
+
         const opcoes = {
           1: "unico",
           2: "diario",
@@ -872,7 +818,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       case "aguardando_recorrencia_exclusao":
         console.log(`\n🗑️ === PROCESSANDO RECORRÊNCIA PARA EXCLUSÃO ===`)
         console.log(`📥 Opção recebida: "${mensagem}"`)
-        
+
         const opcoesExclusao = {
           1: "diario",
           2: "semanal",
@@ -925,7 +871,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
         console.log(`📥 ID recebido: "${mensagem}"`)
 
         const mensagemNormalizada = normalizarTexto(mensagem)
-        
+
         if (mensagemNormalizada === "voltar") {
           estado.step = "aguardando_recorrencia_exclusao"
           conversationStates.set(numeroLimpo, estado)
@@ -1007,7 +953,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       case "aguardando_recorrencia_edicao":
         console.log(`\n✏️ === PROCESSANDO RECORRÊNCIA PARA EDIÇÃO ===`)
         console.log(`📥 Opção recebida: "${mensagem}"`)
-        
+
         const opcoesEdicao = {
           1: "unico",
           2: "diario",
@@ -1061,7 +1007,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
         console.log(`📥 ID recebido: "${mensagem}"`)
 
         const mensagemNormalizadaEdicao = normalizarTexto(mensagem)
-        
+
         if (mensagemNormalizadaEdicao === "voltar") {
           estado.step = "aguardando_recorrencia_edicao"
           conversationStates.set(numeroLimpo, estado)
@@ -1307,7 +1253,7 @@ async function processarFluxoAgendamento(telefone, mensagem, estado) {
       telefone,
       "❌ Ocorreu um erro no agendamento. Vamos começar novamente.\n\nDigite AGENDAR para tentar novamente."
     )
-    
+
     setTimeout(async () => {
       console.log(`📤 Enviando menu de opções após erro...`)
       await enviarMenuOpcoes(telefone, nomeUsuario)
@@ -1431,57 +1377,5 @@ cron.schedule("* * * * *", async () => {
   }
 })
 
-// Função para processar data
-function processarData(dataTexto) {
-  console.log(`\n📅 === PROCESSANDO DATA ===`)
-  console.log(`📥 Texto recebido: "${dataTexto}"`)
-
-  // Vamos usar 2025 como ano base
-  const anoBase = 2025
-  
-  // Remove espaços e converte para minúsculo
-  const texto = dataTexto.trim().toLowerCase()
-  console.log(`🔍 Texto normalizado: "${texto}"`)
-
-  // Formatos aceitos: DD/MM, DD-MM, DD/MM/YYYY, DD-MM-YYYY
-  const regexes = [
-    /^(\d{1,2})[/-](\d{1,2})$/, // DD/MM ou DD-MM
-    /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/, // DD/MM/YYYY ou DD-MM-YYYY
-  ]
-
-  for (const regex of regexes) {
-    const match = texto.match(regex)
-    if (match) {
-      console.log(`✅ Regex match encontrado:`, match)
-      
-      const dia = Number.parseInt(match[1])
-      const mes = Number.parseInt(match[2])
-      const anoMatch = match[3] ? Number.parseInt(match[3]) : anoBase
-
-      console.log(`📊 Valores extraídos - Dia: ${dia}, Mês: ${mes}, Ano: ${anoMatch}`)
-
-      // Validações básicas
-      if (mes < 1 || mes > 12) {
-        console.log(`❌ Mês inválido: ${mes}`)
-        return null
-      }
-
-      // Obtém o último dia do mês
-      const ultimoDiaDoMes = new Date(anoMatch, mes, 0).getDate()
-      if (dia < 1 || dia > ultimoDiaDoMes) {
-        console.log(`❌ Dia inválido: ${dia} (último dia do mês: ${ultimoDiaDoMes})`)
-        return null
-      }
-
-      const dataCompromisso = new Date(anoMatch, mes - 1, dia)
-      const dataFormatada = dataCompromisso.toISOString().split("T")[0]
-      console.log(`✅ Data formatada: ${dataFormatada}`)
-      return dataFormatada
-    }
-  }
-
-  console.log(`❌ Nenhum formato válido encontrado`)
-  return null
-}
 
 client.initialize()

@@ -1,77 +1,114 @@
-# WhatsApp Scheduler Bot (Não Oficial)
+# 🤖 WhatsApp Scheduler Bot
 
-Bot para WhatsApp que permite agendar compromissos e receber lembretes automáticos usando a biblioteca não oficial whatsapp-web.js.
+<div align="center">
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="WhatsApp" />
+  <img src="https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI/CD" />
+</div>
 
-## ⚠️ Aviso Importante
+---
 
-Esta solução usa uma biblioteca não oficial que automatiza o WhatsApp Web. Isso:
+## 🎯 Objetivo & Problema
 
-- **Não é aprovado pelo WhatsApp/Meta**
-- **Pode violar os termos de serviço do WhatsApp**
-- **Pode resultar no banimento do número de telefone usado**
-- **Pode parar de funcionar se o WhatsApp atualizar sua plataforma**
+### O Problema
+Gerenciar compromissos e tarefas manualmente através do WhatsApp pode ser caótico. Mensagens se perdem, lembretes são esquecidos e a organização individual sofre com a falta de automatização.
 
-Use por sua conta e risco, apenas para fins pessoais ou de teste.
+### A Solução
+Este projeto é um **Assistente Inteligente de Agendamento** que transforma o WhatsApp em uma interface de produtividade robusta. Ele permite que usuários cadastrados agendem, editem e recebam lembretes de compromissos diretamente pelo chat, centralizando as informações em um banco de dados MySQL durável.
 
-## Funcionalidades
+---
 
-- **AGENDAR**: Criar novos compromissos através de conversa interativa
-- **COMPROMISSOS HOJE**: Listar todos os compromissos do dia atual
-- **Lembretes automáticos**: Notificações 1 hora antes de cada compromisso
+## 🏗️ Arquitetura
 
-## Requisitos
+O sistema utiliza uma arquitetura baseada em eventos para interagir com a biblioteca `whatsapp-web.js` (uma camada sobre o Puppeteer) e um banco de dados relacional para persistência.
 
-- Node.js 14+
-- MySQL
-- Um smartphone com WhatsApp instalado
+```mermaid
+graph TD
+    User([Usuário WhatsApp]) <--> Bot[Bot Engine - Node.js]
+    Bot <--> DB[(MySQL Database)]
+    Bot --> Cron[Cron Job Lembretes]
+    Cron --> User
+    Bot <--> WA[WhatsApp Web Browser]
+```
 
-## Configuração
+**Principais Tecnologias:**
+- **Runtime**: Node.js (ES Modules)
+- **Integração**: `whatsapp-web.js` (Automação de navegador)
+- **Banco de Dados**: MySQL (Persistência de Usuários e Compromissos)
+- **Agendamento**: `node-cron`
+- **Infraestrutura**: Docker & Docker Compose
 
-### 1. Banco de dados MySQL
+---
 
-1. Instale o MySQL
-2. Execute o script `scripts/create_database.sql`
-3. Configure as credenciais no arquivo `.env`
+## 🚀 Como Rodar
 
-### 2. Variáveis de ambiente
+### 🛠️ Desenvolvimento (Local)
 
-Copie o arquivo `.env.example` para `.env` e configure:
+1. **Pré-requisitos**: Node.js 18+, MySQL.
+2. **Setup**:
+   ```bash
+   npm install
+   ```
+3. **Configuração**:
+   Crie um arquivo `.env` baseado no `.env.example`:
+   ```env
+   DB_HOST=localhost
+   DB_USER=seu_usuario
+   DB_PASSWORD=sua_senha
+   DB_NAME=whatsapp_scheduler
+   ```
+4. **Execução**:
+   ```bash
+   npm run dev
+   ```
 
-\`\`\`env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=sua_senha
-DB_NAME=whatsapp_scheduler
-\`\`\`
+### 🐳 Produção (Docker)
 
-### 3. Instalação
+A forma recomendada de rodar em produção é utilizando Docker Compose para isolar a aplicação e o banco de dados.
 
-\`\`\`bash
-npm install
-npm start
-\`\`\`
+```bash
+docker-compose up -d --build
+```
 
-### 4. Autenticação
+---
 
-Ao iniciar o bot, um QR code será exibido no terminal. Escaneie este QR code com o WhatsApp do seu smartphone:
+## 📱 Exemplos de Interação (Request/Response)
 
-1. Abra o WhatsApp no seu smartphone
-2. Toque em Menu (⋮) ou Configurações
-3. Selecione WhatsApp Web/Desktop
-4. Aponte a câmera para o QR code no terminal
+O bot utiliza um fluxo de conversação guiado por estados.
 
-## Como usar
+| Fluxo | Mensagem do Usuário | Resposta do Bot |
+| :--- | :--- | :--- |
+| **Menu** | `Olá` | `Olá [Nome]! 👋 Comandos disponíveis: AGENDAR, EDITAR, EXCLUIR...` |
+| **Agendar** | `AGENDAR` | `Qual o assunto da Reunião/Tarefa?` |
+| **Dados** | `Reunião de Alinhamento` | `Perfeito! Agora me diga qual a data? (Ex: 25/12)` |
+| **Sucesso** | `25/12` | `Ótimo! Agora o horário? (Ex: 15:30)` |
+| **Confirmação**| `15:30` | `Confirmado! Horário 15:30 salvo. Escolha a frequência...` |
 
-1. Envie **AGENDAR** para iniciar um novo agendamento
-2. Siga as instruções do bot para informar:
-   - Assunto do compromisso
-   - Data (formato DD/MM)
-   - Horário (formato HH:MM ou HHhMM)
+---
 
-3. Envie **COMPROMISSOS HOJE** para ver seus compromissos do dia
+## 🧪 Testes e Qualidade
 
-## Considerações técnicas
+O projeto conta com testes unitários para garantir a integridade dos parsers de data e hora.
 
-- O bot requer uma sessão ativa do WhatsApp Web
-- Para uso em servidor, considere usar um navegador headless como o Puppeteer
-- A sessão precisa ser mantida ativa para o funcionamento contínuo do bot
+```bash
+# Rodar testes
+npm test
+```
+
+A qualidade do código é monitorada via **GitHub Actions**, que executa o build e a suíte de testes em cada Push ou Pull Request.
+
+---
+
+## 🛡️ Segurança e Privacidade
+
+- **LocalAuth**: A sessão do WhatsApp é criptografada e armazenada localmente.
+- **Não Exposição**: Credenciais sensíveis e tokens de API nunca são comitados, utilizando variáveis de ambiente.
+- **Puppeteer Headless**: Em ambiente Docker, o bot roda sem interface gráfica para maior eficiência.
+
+---
+
+<p align="center">
+Desenvolvido por <strong>Roberto Lara</strong>
+</p>
