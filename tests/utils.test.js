@@ -1,4 +1,4 @@
-import { normalizarTexto, processarHorario, processarData } from '../utils.js';
+import { normalizarTexto, processarHorario, processarData } from '../src/utils/utils.js';
 
 describe('Utilitários do Bot', () => {
 

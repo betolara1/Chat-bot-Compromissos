@@ -24,6 +24,17 @@ Este projeto é um **Assistente Inteligente de Agendamento** que transforma o Wh
 
 O sistema utiliza uma arquitetura baseada em eventos para interagir com a biblioteca `whatsapp-web.js` (uma camada sobre o Puppeteer) e um banco de dados relacional para persistência.
 
+### Estrutura de Pastas (Modular)
+```text
+src/
+├── config/     # Configurações globais
+├── database/   # Repositório e conexão
+├── handlers/   # Lógica do fluxo de conversa
+├── services/   # Clientes WhatsApp e Cron
+├── utils/      # Parsers e utilitários
+└── index.js    # Ponto de entrada
+```
+
 ```mermaid
 graph TD
     User([Usuário WhatsApp]) <--> Bot[Bot Engine - Node.js]
